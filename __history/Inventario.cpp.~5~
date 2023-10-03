@@ -1,0 +1,37 @@
+//---------------------------------------------------------------------------
+
+#include <vcl.h>
+#pragma hdrstop
+
+#include "Inventario.h"
+#include "Productos.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+#pragma resource "*.dfm"
+TForm3 *Form3;
+CProducto* producto;
+//---------------------------------------------------------------------------
+__fastcall TForm3::TForm3(TComponent* Owner)
+	: TForm(Owner)
+{
+	producto = new CProducto();
+}
+//---------------------------------------------------------------------------
+void __fastcall TForm3::AddProducto(AnsiString nombre, int& cod, int cant){
+  producto->añadir_producto(nombre,cod,cant);
+}
+void __fastcall TForm3::Button4Click(TObject *Sender)
+{  AnsiString nom = InputBox("Nuevo Producto: ", "Nombre: ","");
+   int cantidad = StrToInt(InputBox("Nuevo Producto: ", "Cantidad: ",""));
+   int cod;
+   AddProducto(nom,cod,cantidad);
+   ShowMessage("Codigo de producto: "+IntToStr(cod));
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TForm3::Button1Click(TObject *Sender)
+{
+  nombreproducto->Caption = producto->buscar(StrToInt(Edit1->Text));
+}
+//---------------------------------------------------------------------------
+

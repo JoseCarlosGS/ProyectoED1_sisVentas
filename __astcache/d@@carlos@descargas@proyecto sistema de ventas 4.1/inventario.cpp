@@ -1,0 +1,112 @@
+﻿//---------------------------------------------------------------------------
+
+#include <vcl.h>
+#pragma hdrstop
+#include <algorithm>
+#include "Inventario.h"
+#include "Productos.h"
+#include "PilaHs.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+#pragma resource "*.dfm"
+TForm3 *Form3;
+CProducto* producto;
+PilaProd* ultimo;
+//---------------------------------------------------------------------------
+__fastcall TForm3::TForm3(TComponent* Owner)
+	: TForm(Owner)
+{
+	producto = new CProducto();
+    ultimo = new PilaProd();
+}
+//---------------------------------------------------------------------------
+void __fastcall TForm3::AddProducto(AnsiString nombre, int& cod, int cant){
+  producto->añadir_producto(nombre,cod,cant);
+  ultimo->meter(cod,nombre,cant);
+}
+void __fastcall TForm3::ModStock(int cod, int cant){
+ producto->modificar_stock(cod,cant);
+}
+void __fastcall TForm3::InfProd(int cod, AnsiString &nom,int &cant){
+ producto->consultar_inf(cod,nom,cant);
+ if (nom=="") {
+	 MessageDlg("Producto no encontrado.", mtError, TMsgDlgButtons() << mbOK, 0);
+ }
+}
+void __fastcall TForm3::AñadirCuadro(int cod, AnsiString nom, int cant){
+  ListView1->Clear();
+   int c,cnt;
+   AnsiString n;
+   PilaProd* aux = new PilaProd();
+
+   while (!ultimo->Vacia()){
+	  ultimo->sacar(c,n,cnt);
+	  if (ListView1->Items->Count < 3) {
+         TListItem* item = ListView1->Items->Add();
+		item->Caption = IntToStr(c);
+		item->SubItems->Add(n);
+		item->SubItems->Add(IntToStr(cnt));
+	   //	delete ListView1->Items->Item[0];
+	  }
+	  aux->meter(c,n,cnt);
+
+   }
+   while (!aux->Vacia()){
+		aux->sacar(c,n,cnt);
+		ultimo->meter(c,n,cnt);
+   }
+}
+void __fastcall TForm3::Button4Click(TObject *Sender)
+{  AnsiString nom = InputBox("Nuevo Producto: ", "Nombre: ","");
+   int cantidad = StrToInt(InputBox("Nuevo Producto: ", "Cantidad: ",""));
+   int cod;
+   AddProducto(nom,cod,cantidad);
+   AñadirCuadro(cod,nom,cantidad);
+   ShowMessage("Codigo de producto: "+IntToStr(cod));
+}
+
+//---------------------------------------------------------------------------
+
+void __fastcall TForm3::Button1Click(TObject *Sender)
+{
+  Edit3->Text = producto->buscar(StrToInt(Edit1->Text));
+}
+//---------------------------------------------------------------------------
+void __fastcall TForm3::Button3Click(TObject *Sender)
+{  int cod = StrToInt(InputBox("Consultar","Codigo de producto: ",""));
+   AnsiString n;
+   int c;
+   InfProd(cod,n,c);
+   if (n!="") {
+	  ShowMessage("Nombre del producto: "+n+"\n"+"Cantidad: "+IntToStr(c)+"\n");
+   }
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TForm3::Button2Click(TObject *Sender)
+{
+  ModStock(StrToInt(Edit1->Text),StrToInt(Edit2->Text));
+  AnsiString n;
+  int x;
+  InfProd(StrToInt(Edit1->Text),n,x);
+  ShowMessage("Añadido correctamente!\nNueva cantidad: "+IntToStr(x));
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TForm3::Button5Click(TObject *Sender)
+{  int c,cod = StrToInt(InputBox("Eliminar","Codigo de producto: ",""));
+   AnsiString n;
+   InfProd(cod,n,c);
+   if (n!="") {
+	  int respuesta = MessageDlg("¿Estás seguro que quieres eliminar a "+n+" de la lista de productos?", mtConfirmation,
+								   TMsgDlgButtons() << mbOK << mbCancel, 0);
+		 if (respuesta == mrOk)	{
+		   producto->eliminar_producto(cod);
+		   ShowMessage(n+" eliminado correctamente de la lista.");
+		}
+   }
+
+}
+//---------------------------------------------------------------------------
+
+

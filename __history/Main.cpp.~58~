@@ -1,0 +1,272 @@
+//---------------------------------------------------------------------------
+
+#include <vcl.h>
+#pragma hdrstop
+#include <windows.h>
+#include "Main.h"
+#include "Historial.h"
+#include "Inventario.h"
+#include "ListaPuntero.h"
+#include "ListaVentas.h"
+#include "PilaCrt.h"
+#include "PilaCrtArch.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+#pragma resource "*.dfm"
+TForm1 *Form1;
+TForm2 *historialForm = nullptr;
+TForm3 *inventarioForm = nullptr;
+ListaP *cliente;
+ListaVent* ventas;
+PilaCrtArch* carritoA;
+PilaCrt* carrito;
+int nro = 1;
+int codigoC=1000;
+int car;
+//---------------------------------------------------------------------------
+__fastcall TForm1::TForm1(TComponent* Owner)
+	: TForm(Owner)
+{
+		historialForm = new TForm2(this);
+		inventarioForm = new TForm3(this);
+		cliente = new ListaP();
+	   //	producto = new ListaP();
+		carrito = new PilaCrt();
+		carritoA = new PilaCrtArch();
+		ventas = new ListaVent();
+		car = 1;
+		Edit5->Text=nro;
+		PreCargar();
+}
+//---------------------------------------------------------------------------
+void buscar_cliente(int cod, AnsiString& nom);
+void buscar_venta(int cod, AnsiString& prod);
+void __fastcall TForm1::AgregarProducto(int num, int cod, AnsiString prod, int cant, float precio, float total)
+{
+    TListItem* item = ListView1->Items->Add(); // Agregar un nuevo elemento a la lista
+
+  item->Caption = num; //numero
+  item->SubItems->Add(IntToStr(cod)); // codigo
+  item->SubItems->Add(prod); // producto
+  item->SubItems->Add(IntToStr(cant)); // cantidad
+  item->SubItems->Add(FloatToStr(precio)); // precio
+  item->SubItems->Add(FloatToStr(total)); //  total
+
+}
+void __fastcall TForm1::LimpiarForm(){
+  ListView1->Clear();
+  Edit1->Clear();
+  Edit2->Clear();
+  Edit3->Clear();
+  Edit4->Clear();
+  cantidadp->Clear();
+  codcliente->Clear();
+  codproducto->Clear();
+  preciop->Clear();
+}
+void __fastcall TForm1::PreCargar(){
+   PilaCrt* aux = new PilaCrt();
+   int codigo, cantidad, precio, tot;
+   AnsiString nomb;
+   if (!carritoA->Vacia()) {
+	 while (!carritoA->Vacia()) {
+		   carritoA->sacar(codigo,cantidad,precio,tot,nomb);
+		   aux->meter(codigo,cantidad,precio,nomb);
+	 }
+	 while (!aux->Vacia()){
+	   aux->sacar(codigo,cantidad,precio,tot,nomb);
+	   AgregarProducto(car,codigo,nomb.TrimLeft(),cantidad,precio,tot);
+	   carritoA->meter(codigo,cantidad,precio,nomb);
+       car++;
+	 }
+   }
+}
+void __fastcall TForm1::Button4Click(TObject *Sender)
+{
+   float total = StrToInt(cantidadp->Text)*StrToFloat(preciop->Text);
+
+   AgregarProducto(car,StrToInt(codproducto->Text),Edit2->Text,StrToInt(cantidadp->Text),StrToFloat(preciop->Text),total);
+  // carrito->meter(StrToInt(codproducto->Text),StrToInt(cantidadp->Text),StrToInt(preciop->Text));
+   carritoA->meter(StrToInt(codproducto->Text),StrToInt(cantidadp->Text),StrToInt(preciop->Text),Edit2->Text);
+   car++;
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TForm1::Nuevocliente1Click(TObject *Sender)
+{  AnsiString nombre=InputBox("Nuevo Cliente: ", "Nombre: ","");
+   codigoC++;
+   cliente->inserta_primero(codigoC,nombre);
+   ShowMessage("Codigo de cliente: "+IntToStr(codigoC));
+}
+//---------------------------------------------------------------------------
+void buscar_cliente(int cod, AnsiString& nom){
+   NodoL* elem = cliente->primero();
+   int c=0;
+   AnsiString s;
+   for (int i=0; i < cliente->longitud(); i++) {
+	 cliente->recupera(elem,c,s);
+	 if (cod == c ) {
+	   nom = s;
+	 }
+	 elem = cliente->siguiente(elem);
+   }
+
+}
+void buscar_venta(int cod,int& codcl,int& monto, AnsiString& fecha){
+   NodoVent* elem = ventas->primero();
+   int numv,c,mont;
+   AnsiString s="nulo",f;
+   for (int i=0; i < ventas->longitud(); i++) {
+	 ventas->recupera(elem,numv,c,mont,f);
+	 if (cod == numv ) {
+	   codcl = c;
+	   monto = mont;
+	   fecha = f;
+	 }
+	 elem = ventas->siguiente(elem);
+   }
+
+}
+void __fastcall TForm1::Button2Click(TObject *Sender)
+{
+	AnsiString cliente;
+	buscar_cliente(StrToInt(codcliente->Text),cliente);
+	if (cliente=="") {
+       MessageDlg("Cliente no encontrado.", mtError, TMsgDlgButtons() << mbOK, 0);
+	}
+	Edit1->Text=cliente;
+}
+//---------------------------------------------------------------------------
+
+
+void __fastcall TForm1::Button3Click(TObject *Sender)
+{   AnsiString n;
+	int ca;
+	inventarioForm->InfProd(StrToInt(codproducto->Text),n,ca);
+	if (n!="") {
+         Edit2->Text = n;
+		 Edit3->Text = ca;
+	}
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TForm1::Nuevoproduto1Click(TObject *Sender)
+{
+	inventarioForm->Show();
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TForm1::Button5Click(TObject *Sender)
+{
+	if (!carritoA->Vacia()) {
+	 int cod,num,monto,cant,pr,total = 0;
+	 AnsiString f = FormatDateTime("dd/mm/yyyy", DateTimePicker1->DateTime);
+     AnsiString nom;
+	 int client = StrToInt(codcliente->Text);
+	 while (!carritoA->Vacia()){
+		 carritoA->sacar(cod,cant,pr,monto,nom);
+		 Edit4->Text = cod;
+		 total += monto;
+
+		 inventarioForm->ModStock(cod,cant*-1);
+	 }
+	 ventas->inserta_ultimo(nro,client,total,f);
+	 ShowMessage("Numero de venta: "+IntToStr(nro)+"\nTotal vendido: "+IntToStr(total)+"\n\nFecha:"+f);
+	 nro++;
+	 Edit5->Text=nro;
+	 LimpiarForm();
+   }else
+   MessageDlg("El carrito esta vacio.", mtError, TMsgDlgButtons() << mbOK, 0);
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TForm1::Button7Click(TObject *Sender)
+{  int a,b,c,d; AnsiString n;
+   ListView1->Items->Delete(carritoA->tam()-1);
+   carritoA->sacar(a,b,c,d,n);
+   car--;
+}
+//---------------------------------------------------------------------------
+
+
+void __fastcall TForm1::Button1Click(TObject *Sender)
+{  int numvent = StrToInt(InputBox("Buscar venta:","Numero de venta: ",""));
+   int codcl,mont;
+   AnsiString fecha;
+   buscar_venta(numvent,codcl,mont,fecha);
+	if (fecha!="") {
+	  ShowMessage("Numero de venta: "+IntToStr(numvent)+"\nCodigo de cliente: "+IntToStr(codcl)+"\nCantidad vendida: Bs."+IntToStr(mont)+"\n\nFecha: "+fecha);
+   }else
+	 MessageDlg("No se encontró la venta.", mtError, TMsgDlgButtons() << mbOK, 0);
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TForm1::Button6Click(TObject *Sender)
+{
+  int respuesta = MessageDlg("¿Estás seguro que quieres cancelar la venta?", mtConfirmation,
+							   TMsgDlgButtons() << mbOK << mbCancel, 0);
+	AnsiString n;
+	if (respuesta == mrOk)
+	{
+		 int cod,monto,cant,pr;
+		  while (!carrito->Vacia()){
+		  carrito->sacar(cod,cant,pr,monto,n);
+		  }
+		  ListView1->Clear();
+	}
+
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TForm1::Buscar1Click(TObject *Sender)
+{  int cod = StrToInt(InputBox("Buscar","Codigo de cliente: ",""));
+   NodoL* elem = cliente->primero();
+   int c=0;
+   AnsiString s,no;
+   for (int i=0; i < cliente->longitud(); i++) {
+	 cliente->recupera(elem,c,s);
+	 if (cod == c ) {
+		  no=s;
+		  int respuesta = MessageDlg("¿Estás seguro que quieres eliminar a "+s+" de la lista de clientes?", mtConfirmation,
+								   TMsgDlgButtons() << mbOK << mbCancel, 0);
+		 if (respuesta == mrOk)	{
+		   cliente->suprime(elem);
+		   ShowMessage(s+" eliminado correctamente de la lista.");
+		}
+
+	 }
+	 elem = cliente->siguiente(elem);
+   }
+   if (no=="") {
+		MessageDlg("Cliente no encontrado.", mtError, TMsgDlgButtons() << mbOK, 0);
+   }
+
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TForm1::ListView1CustomDrawItem(TCustomListView *Sender, TListItem *Item,
+		  TCustomDrawState State, bool &DefaultDraw)
+{
+    // Cambiar el color de fondo de las filas alternadamente
+    if (Item->Index % 2 == 0) {
+		Sender->Canvas->Brush->Color = clSilver; // Color para filas pares
+    } else {
+		Sender->Canvas->Brush->Color = clSkyBlue;   // Color para filas impares
+    }
+
+    // Cambiar el color del texto si lo deseas
+    // Sender->Canvas->Font->Color = clBlack;    // Color del texto
+
+    // Permitir que el sistema dibuje el resto de la fila (texto, iconos, etc.)
+	DefaultDraw = true;
+
+}
+//---------------------------------------------------------------------------
+
+
+void __fastcall TForm1::Button8Click(TObject *Sender)
+{
+	 codcliente->Text = DateTimePicker1-> Date;
+}
+//---------------------------------------------------------------------------
+
