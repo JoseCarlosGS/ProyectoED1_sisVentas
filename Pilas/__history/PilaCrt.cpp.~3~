@@ -1,0 +1,58 @@
+//---------------------------------------------------------------------------
+
+#pragma hdrstop
+
+#include "PilaCrt.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+using namespace std;
+PilaCrt::PilaCrt(){
+   PtrNodo=NULL;
+   tamaño=0;
+}
+bool PilaCrt::Vacia(){
+  if (tamaño==0) {
+	 return true;
+  }else return false;
+
+}
+venta PilaCrt::Cima(){
+  //int n=nuevo_nodo;
+
+  if (Vacia()) {
+	 // cout<<"Pila Vacia"<<endl;
+  }else {
+	 return nuevo_nodo->datos;
+  }
+
+}
+void PilaCrt::meter(int cod, int cantidad, int precio){
+	 nuevo_nodo=new NodoCR();
+	 nuevo_nodo->datos.codigo=cod;
+	 nuevo_nodo->datos.cantidad=cantidad;
+	 nuevo_nodo->datos.preciounit=precio;
+	 nuevo_nodo->datos.subtotal=cantidad*precio;
+	 nuevo_nodo->sig=PtrNodo;
+	 PtrNodo= nuevo_nodo;
+	 tamaño++;
+
+}
+void PilaCrt::sacar(int &cod, int &cantidad, int &precio, int &sub){
+   NodoCR* aux=PtrNodo;
+   cod = aux->datos.codigo;
+   cantidad = aux->datos.cantidad;
+   precio = aux->datos.preciounit;
+   sub = aux->datos.subtotal;
+	if (!Vacia()) {
+	  // el=nuevo_nodo->dato;
+	   PtrNodo=aux->sig;
+	   delete aux;
+	   tamaño--;
+	}
+	else cout<<"Error: Pila vacia";
+}
+int PilaCrt::tam(){
+  return tamaño;
+}
+
+

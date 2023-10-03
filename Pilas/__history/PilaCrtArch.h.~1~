@@ -1,0 +1,27 @@
+//---------------------------------------------------------------------------
+#include <fstream>
+#ifndef PilaCrtArchH
+#define PilaCrtArchH
+#include <iostream>
+#include <string>
+#include <vector>
+#include <sstream>
+//---------------------------------------------------------------------------
+using namespace std;
+class PilaCrt{
+	private:
+	  int tamaño;
+	  ofstream archivoSalida;
+      ifstream archivoEntrada;
+      int lineas();
+	public:
+	  PilaCrt();
+	  bool Vacia();
+	  string Cima();
+	  void meter(int codigo, int cantidad, int precio);
+	  void sacar(int &codigo, int &cantidad, int &precio, int &sub);
+	  void to_str();
+      int tam();
+};
+
+#endif
