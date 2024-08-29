@@ -1,4 +1,4 @@
-/Win32
-/_astcache
-/_history
-/_recovery
+Win32/
+_astcache/
+_history/
+_recovery/
